@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse OS</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      height: 52px;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+      gap: 14px;
+    }
+
+    .app-wordmark {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap;
+    }
+
+    .header-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 3px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .header-stat-val {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .header-stat-lbl {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.3);
+    }
+    .header-stats { display: flex; gap: 5px; align-items: center; }
+    .header-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.08); margin: 0 6px; flex-shrink: 0; }
+
+    .app-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #0a84ff;
+      flex-shrink: 0;
+    }
+
+    .header-spacer { flex: 1; }
+
+    .header-actions { display: flex; gap: 6px; align-items: center; }
+
+.btn-urgent {
+      background: rgba(255,69,58,0.1);
+      color: #ff453a;
+      border: 1px solid rgba(255,69,58,0.2);
+    }
+    .btn-urgent:not(:disabled):hover { background: rgba(255,69,58,0.18); }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: opacity 0.15s, background 0.15s;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-run {
+      background: #0a84ff;
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .btn-run:not(:disabled):hover { background: #409cff; }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.65);
+    }
+    .btn-secondary:not(:disabled):hover { background: rgba(255,255,255,0.13); color: #fff; }
+
+    .btn-ghost {
+      background: transparent;
+      color: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-ghost:not(:disabled):hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2); }
+
+    .btn-danger {
+      background: rgba(255,69,58,0.1);
+      color: #ff453a;
+    }
+    .btn-danger:not(:disabled):hover { background: rgba(255,69,58,0.18); }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ── Error banner ── */
+    .error-banner {
+      background: rgba(255,69,58,0.1);
+      color: #ff453a;
+      padding: 8px 20px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255,69,58,0.2);
+      flex-shrink: 0;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Layout ── */
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    .left-panel {
+      flex: 0 0 56%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .grid-wrapper {
+      flex: 1;
+      overflow: auto;
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .grid-svg { width: 100%; height: auto; display: block; max-width: 860px; }
+
+    .zone-legend {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px 10px;
+      padding: 6px 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: -0.01em;
+    }
+
+    .legend-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      flex: 0 0 44%;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #000;
+    }
+
+    /* ── Section ── */
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .panel-section.grow {
+      flex: 1;
+      min-height: 160px;
+      overflow: hidden;
+    }
+
+    .sec-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sec-hdr-left { display: flex; align-items: center; gap: 8px; }
+
+    .sec-hdr-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .count-pill {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .sec-chevron {
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      transition: transform 0.2s;
+    }
+    .sec-chevron.open { transform: rotate(180deg); }
+
+    .empty-msg {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      text-align: center;
+      padding: 12px 16px;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Task queue ── */
+    .task-scroll { overflow-y: auto; max-height: 148px; padding: 0 10px 6px; }
+
+    .task-card {
+      padding: 5px 9px;
+      background: #1c1c1e;
+      border-radius: 8px;
+      margin-bottom: 3px;
+      border-left: 2px solid rgba(255,255,255,0.08);
+    }
+    .task-card.pending { border-left-color: #0a84ff; }
+    .task-card.assigned { border-left-color: #30d158; background: rgba(48,209,88,0.05); }
+
+    .task-row1 { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+
+    .task-id {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      font-family: 'SF Mono', 'Menlo', monospace;
+      letter-spacing: -0.02em;
+    }
+
+    .task-row2 { display: flex; gap: 6px; font-size: 11px; flex-wrap: wrap; }
+
+    .task-type-lbl { color: rgba(255,255,255,0.75); font-weight: 600; }
+    .task-zone-lbl { color: rgba(255,255,255,0.4); }
+    .task-route { display: none; }
+
+    .pri-badge {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .status-chip {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+    .status-chip.pending { background: rgba(10,132,255,0.12); color: #0a84ff; }
+    .status-chip.assigned { background: rgba(48,209,88,0.12); color: #30d158; }
+
+    /* ── Agents ── */
+    .agent-scroll { overflow-y: auto; max-height: 240px; padding: 0 10px 6px; }
+
+    .agent-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: #1c1c1e;
+      border-radius: 8px;
+      margin-bottom: 3px;
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: border-color 0.3s;
+    }
+    .agent-row.working  { border-color: rgba(10,132,255,0.25); }
+    .agent-row.charging { border-color: rgba(255,159,10,0.25); }
+
+    .agent-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 700;
+      flex-shrink: 0;
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+    .avatar-robot { background: rgba(10,132,255,0.12); color: #0a84ff; border: 1px solid rgba(10,132,255,0.25); }
+    .avatar-human { background: rgba(255,159,10,0.12); color: #ff9f0a; border: 1px solid rgba(255,159,10,0.25); }
+
+    .agent-body { flex: 1; min-width: 0; }
+
+    .agent-name { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); margin-bottom: 2px; letter-spacing: -0.01em; }
+
+    .batt-track { height: 2px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 3px; overflow: hidden; }
+    .batt-fill { height: 100%; border-radius: 2px; transition: width 0.5s, background 0.3s; }
+
+    .agent-sub { font-size: 10px; color: rgba(255,255,255,0.3); display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .batt-warn { background: rgba(255,69,58,0.15); color: #ff453a; padding: 0 4px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+
+    .agent-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+
+    .status-led { width: 6px; height: 6px; border-radius: 50%; }
+    .led-idle     { background: rgba(255,255,255,0.15); }
+    .led-working  { background: #30d158; box-shadow: 0 0 6px rgba(48,209,88,0.5); }
+    .led-charging { background: #ff9f0a; box-shadow: 0 0 6px rgba(255,159,10,0.5); }
+
+    .agent-task-lbl { font-size: 10px; color: #0a84ff; font-family: 'SF Mono', 'Menlo', monospace; font-weight: 600; }
+
+    .phase-badge {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .phase-idle     { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.25); }
+    .phase-pickup   { background: rgba(10,132,255,0.12); color: #0a84ff; }
+    .phase-waiting  { background: rgba(255,159,10,0.12); color: #ff9f0a; }
+    .phase-delivery { background: rgba(48,209,88,0.12); color: #30d158; }
+    .phase-charge   { background: rgba(255,214,10,0.1); color: #ffd60a; }
+
+    /* ── Last Run ── */
+    .last-run-panel {
+      margin: 6px 12px;
+      background: #1c1c1e;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .last-run-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      cursor: pointer;
+      user-select: none;
+      gap: 8px;
+    }
+
+    .last-run-title { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); letter-spacing: -0.01em; }
+    .last-run-badge { font-size: 10px; color: rgba(255,255,255,0.3); }
+    .last-run-chevron { font-size: 9px; color: rgba(255,255,255,0.2); }
+
+    .last-run-body { padding: 0 12px 10px; max-height: 108px; overflow-y: auto; }
+
+    .lrun-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 0;
+      font-size: 11px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .lrun-agent   { color: #30d158; font-weight: 700; font-family: 'SF Mono', 'Menlo', monospace; flex-shrink: 0; }
+    .lrun-arrow   { color: rgba(255,255,255,0.2); flex-shrink: 0; }
+    .lrun-task    { color: #0a84ff; font-weight: 700; font-family: 'SF Mono', 'Menlo', monospace; flex-shrink: 0; }
+    .lrun-type    { color: rgba(255,255,255,0.4); flex-shrink: 0; font-size: 10px; }
+    .lrun-route   { color: rgba(255,255,255,0.18); font-family: 'SF Mono', 'Menlo', monospace; font-size: 10px; flex: 1; }
+    .lrun-dist    { color: #30d158; font-weight: 600; flex-shrink: 0; font-size: 11px; }
+    .lrun-totals  { font-size: 10px; color: rgba(255,255,255,0.25); padding-top: 5px; margin-top: 2px; letter-spacing: -0.01em; }
+
+    /* ── Metrics ── */
+    .metrics-wrap { padding: 0 10px 8px; }
+
+    .metrics-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .metric-card {
+      background: #1c1c1e;
+      border-radius: 8px;
+      padding: 6px 8px 5px;
+      cursor: default;
+    }
+    .metric-card.alert { background: rgba(255,69,58,0.08); }
+
+    .metric-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 2px;
+      line-height: 1.2;
+    }
+
+    .metric-val {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .metric-val.sm  { font-size: 13px; }
+    .metric-val.alert-val { color: #ff453a; }
+
+    /* ── Log Panel ── */
+    .log-tabs {
+      display: flex;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .log-tab {
+      padding: 8px 0;
+      margin-right: 18px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.25);
+      cursor: pointer;
+      background: none;
+      border: none;
+      border-bottom: 1.5px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .log-tab.active { color: #0a84ff; border-bottom-color: #0a84ff; }
+    .log-tab:hover:not(.active) { color: rgba(255,255,255,0.45); }
+
+    .log-scroll { overflow-y: auto; flex: 1; padding: 6px 12px 8px; min-height: 0; }
+
+    .log-entry {
+      padding: 4px 8px;
+      background: #1c1c1e;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 6px;
+      align-items: baseline;
+      font-size: 11px;
+    }
+
+    .log-ts     { color: rgba(255,255,255,0.2); font-family: 'SF Mono', 'Menlo', monospace; font-size: 10px; flex-shrink: 0; }
+    .log-msg    { color: #0a84ff; font-weight: 600; font-family: 'SF Mono', 'Menlo', monospace; }
+    .log-move   { color: #30d158; font-weight: 600; font-family: 'SF Mono', 'Menlo', monospace; }
+    .log-reason { color: rgba(255,255,255,0.25); font-style: italic; }
+
+    /* ── Info Modal ── */
+    .info-modal-box {
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+    }
+
+    .info-section { padding: 0 20px 16px; }
+
+    .info-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.3);
+      padding: 14px 0 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 4px;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .info-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+      letter-spacing: 0.02em;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.55;
+      letter-spacing: -0.01em;
+    }
+
+    .info-text strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+    .info-rule-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .info-rule-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+
+    .info-rule-list li::before {
+      content: '—';
+      color: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    .info-rule-list strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+    .btn-info {
+      background: transparent;
+      color: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-info:hover { color: #fff; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.06); }
+
+    /* ── History Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 200;
+      padding: 40px 20px;
+      overflow-y: auto;
+    }
+
+    .modal-box {
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 760px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+    }
+
+    .modal-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+
+    .modal-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+    .modal-btns  { display: flex; gap: 6px; }
+
+    .modal-body { overflow-y: auto; flex: 1; padding: 14px 20px; }
+
+    .run-block { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+
+    .run-hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .run-hdr:hover { background: rgba(255,255,255,0.06); }
+
+    .run-chevron { color: rgba(255,255,255,0.25); font-size: 11px; flex-shrink: 0; }
+    .run-num     { font-weight: 700; font-size: 13px; color: #fff; letter-spacing: -0.02em; }
+    .run-time    { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: rgba(255,255,255,0.35); }
+    .run-sum     { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.35); }
+
+    .run-body { padding: 10px 14px; }
+
+    .assign-card {
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      margin-bottom: 4px;
+      border-left: 2px solid rgba(255,255,255,0.08);
+    }
+    .assign-card.is-charge { border-left-color: #ff9f0a; }
+
+    .assign-top  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+    .asgn-task   { font-weight: 700; color: #0a84ff; font-family: 'SF Mono', 'Menlo', monospace; font-size: 12px; }
+    .asgn-arrow  { color: rgba(255,255,255,0.2); }
+    .asgn-agent  { font-weight: 700; color: #30d158; font-size: 12px; font-family: 'SF Mono', 'Menlo', monospace; }
+    .asgn-type   { font-size: 11px; color: rgba(255,255,255,0.45); }
+    .asgn-zone   { font-size: 10px; color: rgba(255,255,255,0.25); }
+    .asgn-route  { font-size: 10px; color: rgba(255,255,255,0.18); font-family: 'SF Mono', 'Menlo', monospace; }
+    .asgn-dist   { font-size: 11px; color: #30d158; font-weight: 600; }
+    .asgn-charge-lbl { font-weight: 700; color: #ff9f0a; font-size: 12px; }
+    .asgn-reason { font-size: 10px; color: rgba(255,255,255,0.25); font-style: italic; }
+    .run-snap    { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; color: rgba(255,255,255,0.3); }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin-ring { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    /* ── SVG animations ── */
+    @keyframes taskPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .task-marker { animation: taskPulse 2s ease-in-out infinite; }
+    @keyframes ghostFade { from { opacity: 0.4; } to { opacity: 0; } }
+
+    /* ── Scrollbars ── */
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ═══ CONSTANTS ═══ */
+const CELL = 40, COLS = 20, ROWS = 15;
+const SVG_W = COLS * CELL, SVG_H = ROWS * CELL;
+
+/* Apple system colors — each zone gets a distinct one */
+const ZONES = [
+  { id: 'A', name: 'Cold Storage',     pri: 'urgent', x: 0,  y: 2, w: 4, h: 4, stroke: '#ff453a', fill: 'rgba(255,69,58,0.06)'   },
+  { id: 'B', name: 'High-Value Goods', pri: 'high',   x: 5,  y: 2, w: 4, h: 4, stroke: '#ff9f0a', fill: 'rgba(255,159,10,0.06)'  },
+  { id: 'C', name: 'Electronics',      pri: 'high',   x: 11, y: 2, w: 4, h: 4, stroke: '#ffd60a', fill: 'rgba(255,214,10,0.06)'  },
+  { id: 'D', name: 'Bulk Returns',     pri: 'low',    x: 16, y: 2, w: 4, h: 4, stroke: '#30d158', fill: 'rgba(48,209,88,0.06)'   },
+  { id: 'E', name: 'Std Pallets',      pri: 'medium', x: 0,  y: 8, w: 4, h: 4, stroke: '#5e5ce6', fill: 'rgba(94,92,230,0.06)'   },
+  { id: 'F', name: 'Dispatch Staging', pri: 'medium', x: 16, y: 8, w: 4, h: 4, stroke: '#5ac8f5', fill: 'rgba(90,200,245,0.06)'  },
+];
+
+const SPECIAL_ZONES = [
+  { id: 'RECV', name: 'Receiving Dock', x: 7, y: 0, w: 6, h: 2, stroke: '#bf5af2', fill: 'rgba(191,90,242,0.07)'  },
+  { id: 'OUT',  name: 'Output Bay',     x: 5, y: 9, w:10, h: 5, stroke: '#0a84ff', fill: 'rgba(10,132,255,0.07)'  },
+];
+
+const OUTPUT_BAY  = { x: 10, y: 11 };
+const RECV_DOCK   = { x: 10, y: 1  };
+const CS_STATIONS = [{ id: 'CS1', x: 0, y: 14 }, { id: 'CS2', x: 19, y: 14 }];
+const TASK_TYPES  = ['Pick', 'Restock', 'Move Pallet', 'Quality Check', 'Pack Order'];
+
+const PRI_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
+const PRI_COLOR = { urgent: '#ff453a', high: '#ff9f0a', medium: '#5e5ce6', low: '#30d158' };
+const PRI_BG    = { urgent: 'rgba(255,69,58,0.12)', high: 'rgba(255,159,10,0.12)', medium: 'rgba(94,92,230,0.12)', low: 'rgba(48,209,88,0.12)' };
+
+const ANIM_SPEED      = 0.4;
+const ANIM_INTERVAL   = 120;
+const AT_PICKUP_TICKS = 7;
+const AT_CHARGE_TICKS = 22;
+const AT_QC_TICKS     = 10;
+const SLA_URGENT_SEC  = 30;
+
+const API_KEY = ''; // paste your Anthropic API key here
+
+const SYSTEM_PROMPT = `You are an AI warehouse orchestrator. WAREHOUSE LAYOUT (20×15 grid):
+- Receiving Dock (RECV): cols 7-12, rows 0-1 — inbound goods
+- Zone A Cold Storage: cols 0-3, rows 2-5 — urgent priority
+- Zone B High-Value Goods: cols 5-8, rows 2-5 — high priority
+- Zone C Electronics: cols 11-14, rows 2-5 — high priority
+- Zone D Bulk Returns: cols 16-19, rows 2-5 — low priority
+- Zone E Std Pallets: cols 0-3, rows 8-11 — medium priority
+- Zone F Dispatch Staging: cols 16-19, rows 8-11 — medium priority
+- Output Bay (OUT): cols 5-14, rows 9-13 — all delivered items go here
+- Charging Stations: (0,14) and (19,14)
+TASK ROUTING: Pick → storage zone to Output Bay. Restock → Receiving Dock to storage zone. Move Pallet → zone to zone. Quality Check → in-place (human). Pack Order → in-place at Output Bay (robot).
+RULES: Robots handle Pick, Move Pallet, Pack Order. Humans handle Quality Check. Any agent handles Restock. Priority: urgent>high>medium>low. Prefer closest idle agent. Robots <15% battery → charge. Never assign more than one task per agent.
+Respond ONLY with valid JSON array:
+[{"taskId":"T1","agentId":"R2","reason":"..."},{"agentId":"R4","action":"charge","reason":"..."}]`;
+
+/* ═══ HELPERS ═══ */
+let _tc = 0;
+const nid  = () => `T${++_tc}`;
+const ri   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+const cx   = v => v * CELL + CELL / 2;
+const cy   = v => v * CELL + CELL / 2;
+const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+const nearestCS = a => dist(a.x,a.y,CS_STATIONS[0].x,CS_STATIONS[0].y) <= dist(a.x,a.y,CS_STATIONS[1].x,CS_STATIONS[1].y) ? CS_STATIONS[0] : CS_STATIONS[1];
+
+const phaseLabel = p => {
+  if (p === 'moving_to_pickup')   return ['pickup',   '→ PICKUP'];
+  if (p === 'at_pickup')          return ['waiting',  '⏳ LOADING'];
+  if (p === 'moving_to_delivery') return ['delivery', '→ DELIVERY'];
+  if (p === 'completed')          return ['delivery', '✓ DONE'];
+  return ['idle', 'IDLE'];
+};
+
+function makeTask(type, fromX, fromY, toX, toY, zoneId, pri) {
+  const z = [...ZONES, ...SPECIAL_ZONES].find(z => z.id === zoneId);
+  const req = type === 'Quality Check' ? 'human' : type === 'Restock' ? 'any' : 'robot';
+  return {
+    id: nid(), type, fromX, fromY, toX, toY,
+    x: fromX, y: fromY,
+    zone: zoneId, zoneName: z ? z.name : zoneId,
+    priority: pri, requiredAgent: req,
+    status: 'pending', createdAt: Date.now(),
+    assignedAt: null, cycleStartAt: null, cycleEndAt: null,
+  };
+}
+
+function randomTask() {
+  const type = TASK_TYPES[ri(0, TASK_TYPES.length - 1)];
+  if (type === 'Pack Order') return makeTask(type, OUTPUT_BAY.x, OUTPUT_BAY.y, OUTPUT_BAY.x, OUTPUT_BAY.y, 'OUT', 'medium');
+  if (type === 'Restock') {
+    const z = ZONES[ri(0, ZONES.length - 1)];
+    return makeTask(type, RECV_DOCK.x+ri(-2,2), RECV_DOCK.y, z.x+ri(0,z.w-1), z.y+ri(0,z.h-1), z.id, z.pri);
+  }
+  if (type === 'Quality Check') {
+    const z = ZONES[ri(0, ZONES.length - 1)];
+    const fx = z.x+ri(0,z.w-1), fy = z.y+ri(0,z.h-1);
+    return makeTask(type, fx, fy, fx, fy, z.id, z.pri);
+  }
+  if (type === 'Move Pallet') {
+    const z1 = ZONES[ri(0, ZONES.length-1)];
+    let z2 = ZONES[ri(0, ZONES.length-1)];
+    while (z2.id === z1.id) z2 = ZONES[ri(0, ZONES.length-1)];
+    return makeTask(type, z1.x+ri(0,z1.w-1), z1.y+ri(0,z1.h-1), z2.x+ri(0,z2.w-1), z2.y+ri(0,z2.h-1), z1.id, z1.pri);
+  }
+  const z = ZONES[ri(0, ZONES.length-1)];
+  return makeTask(type, z.x+ri(0,z.w-1), z.y+ri(0,z.h-1), OUTPUT_BAY.x, OUTPUT_BAY.y, z.id, z.pri);
+}
+
+const mkAgent = (id, name, x, y, battery) => ({
+  id, name, x, y,
+  ...(battery !== undefined ? { battery, batteryDrained: 0 } : {}),
+  status: 'idle', currentTaskId: null, completedCount: 0,
+  phase: 'idle', pickupX: null, pickupY: null, deliveryX: null, deliveryY: null,
+  atPickupTick: 0, atPickupTarget: AT_PICKUP_TICKS,
+  taskDistAccum: 0, totalDistTraveled: 0,
+  idleTickCount: 0, workingTickCount: 0,
+});
+
+const INIT_ROBOTS = () => [
+  mkAgent('R1','Bot-01', 0, 7,85), mkAgent('R2','Bot-02', 5, 7,62),
+  mkAgent('R3','Bot-03',10, 7,91), mkAgent('R4','Bot-04',15, 7,45),
+  mkAgent('R5','Bot-05',19, 7,78),
+];
+const INIT_HUMANS = () => [mkAgent('H1','Worker-01',6,7), mkAgent('H2','Worker-02',14,7)];
+const INIT_TASKS  = () => [
+  makeTask('Pick',         2, 3, OUTPUT_BAY.x, OUTPUT_BAY.y, 'A', 'urgent'),
+  makeTask('Restock',      RECV_DOCK.x, RECV_DOCK.y, 6, 3, 'B', 'high'),
+  makeTask('Quality Check',12, 3,12, 3,'C','high'),
+  makeTask('Move Pallet',  17, 3, 1, 9,'D','medium'),
+];
+
+/* ═══ ANIMATION STEP ═══ */
+function stepAgents(robots, humans, tasks) {
+  const now = Date.now();
+  const logEvents = [], completedPathsToAdd = [], completedTaskIds = new Set();
+
+  function move(agent) {
+    const isRobot = 'battery' in agent;
+    if (agent.phase === 'idle') return { ...agent, idleTickCount: agent.idleTickCount+1 };
+    const a = { ...agent, workingTickCount: agent.workingTickCount+1 };
+
+    if (a.phase === 'moving_to_pickup') {
+      const dx = a.pickupX-a.x, dy = a.pickupY-a.y, d = Math.sqrt(dx*dx+dy*dy);
+      if (d <= ANIM_SPEED) return { ...a, x:a.pickupX, y:a.pickupY, taskDistAccum:a.taskDistAccum+d, phase:'at_pickup', atPickupTick:0 };
+      const s = ANIM_SPEED/d;
+      return { ...a, x:a.x+dx*s, y:a.y+dy*s, taskDistAccum:a.taskDistAccum+ANIM_SPEED };
+    }
+
+    if (a.phase === 'at_pickup') {
+      const tick = a.atPickupTick+1;
+      if (tick >= a.atPickupTarget) {
+        const dx = a.deliveryX-a.x, dy = a.deliveryY-a.y, d = Math.sqrt(dx*dx+dy*dy);
+        if (d < 0.5) return { ...a, atPickupTick:tick, phase:'completed' };
+        logEvents.push({ ts:new Date(now).toLocaleTimeString(), msg:`${a.id} → delivery (${Math.round(a.deliveryX)},${Math.round(a.deliveryY)})`, reason:a.currentTaskId||'' });
+        return { ...a, atPickupTick:tick, phase:'moving_to_delivery' };
+      }
+      return { ...a, atPickupTick:tick };
+    }
+
+    if (a.phase === 'moving_to_delivery') {
+      const dx = a.deliveryX-a.x, dy = a.deliveryY-a.y, d = Math.sqrt(dx*dx+dy*dy);
+      if (d <= ANIM_SPEED) return { ...a, x:a.deliveryX, y:a.deliveryY, taskDistAccum:a.taskDistAccum+d, phase:'completed' };
+      const s = ANIM_SPEED/d;
+      return { ...a, x:a.x+dx*s, y:a.y+dy*s, taskDistAccum:a.taskDistAccum+ANIM_SPEED };
+    }
+
+    if (a.phase === 'completed') {
+      const tid = a.currentTaskId, isCharging = !tid, traveled = a.taskDistAccum;
+      if (!isCharging) {
+        const task = tasks.find(t => t.id === tid);
+        if (task) {
+          const ct = task.cycleStartAt ? (now-task.cycleStartAt)/1000 : 0;
+          completedTaskIds.add(tid);
+          completedPathsToAdd.push({ id:`${a.id}-${tid}-${now}`, fromX:task.fromX, fromY:task.fromY, toX:task.toX, toY:task.toY, isRobot, expiresAt:now+9000 });
+          logEvents.push({ ts:new Date(now).toLocaleTimeString(), msg:`${a.id} ✓ ${tid}  ${ct.toFixed(1)}s  ${traveled.toFixed(1)}c`, reason:'' });
+        }
+      } else {
+        logEvents.push({ ts:new Date(now).toLocaleTimeString(), msg:`${a.id} ⚡ charged`, reason:'' });
+      }
+      const drain = isRobot && !isCharging ? Math.min(25, Math.max(1, Math.round(traveled*1.5))) : 0;
+      const chargeGain = isRobot && isCharging ? 20 : 0;
+      return {
+        ...a, phase:'idle', status:'idle', currentTaskId:null,
+        pickupX:null, pickupY:null, deliveryX:null, deliveryY:null,
+        atPickupTick:0, atPickupTarget:AT_PICKUP_TICKS, taskDistAccum:0,
+        totalDistTraveled:a.totalDistTraveled+traveled,
+        completedCount: !isCharging ? a.completedCount+1 : a.completedCount,
+        idleTickCount:a.idleTickCount+1,
+        ...(isRobot ? { battery:Math.max(0,Math.min(100,a.battery-drain+chargeGain)), batteryDrained:a.batteryDrained+drain } : {}),
+      };
+    }
+    return a;
+  }
+
+  return {
+    newRobots: robots.map(move), newHumans: humans.map(move),
+    newTasks:  tasks.map(t => completedTaskIds.has(t.id) ? { ...t, status:'completed', cycleEndAt:now } : t),
+    logEvents, completedPathsToAdd,
+  };
+}
+
+/* ═══ METRICS ═══ */
+function computeMetrics(robots, humans, sessionLog, currentTasks, sessionStartMs, allCycleTimes, prevQueueDepth) {
+  const allAgents = [...robots, ...humans];
+  const totalCompleted = allAgents.reduce((s,a) => s+a.completedCount, 0);
+  const waitTimes = sessionLog.flatMap(r => r.assignments.map(a => a.waitSeconds||0));
+  const avgWaitSeconds = waitTimes.length ? waitTimes.reduce((a,b)=>a+b)/waitTimes.length : 0;
+  const lastRun = sessionLog[sessionLog.length-1];
+  const utilizationRate = lastRun ? Math.round(lastRun.agentsWorking/(robots.length+humans.length)*100) : 0;
+  const robotsCharging  = sessionLog.reduce((s,r) => s+r.chargeActions.length, 0);
+  const best = allAgents.reduce((b,a) => a.completedCount>b.n ? {id:a.id,n:a.completedCount} : b, {id:'-',n:0});
+  const mostLoadedAgent = best.n>0 ? `${best.id}(${best.n})` : '-';
+  const tw={},tc={}; sessionLog.forEach(r=>r.assignments.forEach(a=>{tw[a.taskType]=(tw[a.taskType]||0)+(a.waitSeconds||0);tc[a.taskType]=(tc[a.taskType]||0)+1;}));
+  let bottleneckTaskType='-',maxW=0; Object.keys(tw).forEach(t=>{const avg=tw[t]/tc[t];if(avg>maxW){maxW=avg;bottleneckTaskType=t;}});
+  const urgentMissed   = sessionLog.reduce((s,r) => s+(r.urgentMissed||0), 0);
+  const totalDrain     = robots.reduce((s,r) => s+r.batteryDrained, 0);
+  const totalDone      = robots.reduce((s,r) => s+r.completedCount, 0);
+  const avgBatteryDrain = totalDone>0 ? totalDrain/totalDone : 0;
+  const sessionHours   = (Date.now()-sessionStartMs)/3_600_000;
+  const throughput     = sessionHours>0.0001 ? totalCompleted/sessionHours : 0;
+  const avgCycleTime   = allCycleTimes.length ? allCycleTimes.reduce((a,b)=>a+b)/allCycleTimes.length : 0;
+  const urgentAll      = sessionLog.flatMap(r=>r.assignments.filter(a=>a.priority==='urgent'));
+  const slaBreaches    = urgentAll.filter(a=>(a.waitSeconds||0)>SLA_URGENT_SEC).length;
+  const slaBreachRate  = urgentAll.length ? Math.round(slaBreaches/urgentAll.length*100) : 0;
+  const onTimeRate     = 100-slaBreachRate;
+  const zoneCounts     = {}; (currentTasks||[]).filter(t=>t.status==='pending').forEach(t=>{zoneCounts[t.zone]=(zoneCounts[t.zone]||0)+1;});
+  const topZone        = Object.entries(zoneCounts).sort((a,b)=>b[1]-a[1])[0];
+  const congestionZone = topZone ? `${topZone[0]}(${topZone[1]})` : '—';
+  const humanDone      = humans.reduce((s,h) => s+h.completedCount, 0);
+  const humanSplit     = totalCompleted>0 ? Math.round(humanDone/totalCompleted*100) : 0;
+  const totalDistance  = allAgents.reduce((s,a) => s+(a.totalDistTraveled||0), 0);
+  const totalIdle      = allAgents.reduce((s,a) => s+a.idleTickCount, 0);
+  const totalTicks     = allAgents.reduce((s,a) => s+a.idleTickCount+a.workingTickCount, 0);
+  const idleRate       = totalTicks>0 ? Math.round(totalIdle/totalTicks*100) : 0;
+  const queueDepth     = (currentTasks||[]).filter(t=>t.status==='pending').length;
+  const queueTrend     = queueDepth>(prevQueueDepth||0) ? '↑' : queueDepth<(prevQueueDepth||0) ? '↓' : '→';
+  const peakLoad       = Math.max(0,...sessionLog.map(r=>r.agentsWorking));
+  const battEfficiency = totalDistance>0.1 ? (totalDrain/totalDistance).toFixed(2) : '0';
+  return { totalCompleted, avgWaitSeconds, utilizationRate, robotsCharging, mostLoadedAgent, bottleneckTaskType, urgentMissed, avgBatteryDrain, throughput, avgCycleTime, slaBreachRate, onTimeRate, congestionZone, humanSplit, totalDistance, idleRate, queueDepth, queueTrend, peakLoad, battEfficiency };
+}
+
+/* ═══ WAREHOUSE GRID ═══ */
+function WarehouseGrid({ robots, humans, tasks, completedPaths }) {
+  const pending  = tasks.filter(t=>t.status==='pending');
+  const assigned = tasks.filter(t=>t.status==='assigned');
+  const allAgents = [...robots, ...humans];
+
+  return (
+    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="grid-svg">
+      <defs>
+        <pattern id="outStripe" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#0a84ff" strokeWidth="1.5" opacity="0.08"/>
+        </pattern>
+        <pattern id="recvStripe" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#bf5af2" strokeWidth="1.5" opacity="0.08"/>
+        </pattern>
+      </defs>
+
+      <rect width={SVG_W} height={SVG_H} fill="#050505"/>
+
+      {/* Grid — barely visible */}
+      {Array.from({length:COLS+1},(_,i) => <line key={`v${i}`} x1={i*CELL} y1={0} x2={i*CELL} y2={SVG_H} stroke="#fff" strokeWidth="0.5" opacity="0.03"/>)}
+      {Array.from({length:ROWS+1},(_,i) => <line key={`h${i}`} x1={0} y1={i*CELL} x2={SVG_W} y2={i*CELL} stroke="#fff" strokeWidth="0.5" opacity="0.03"/>)}
+
+      {/* Storage zones */}
+      {ZONES.map(z => (
+        <g key={z.id}>
+          <rect x={z.x*CELL} y={z.y*CELL} width={z.w*CELL} height={z.h*CELL} fill={z.fill} stroke={z.stroke} strokeWidth="1" strokeOpacity="0.5" rx="3"/>
+          <text x={(z.x+z.w/2)*CELL} y={z.y*CELL+14} textAnchor="middle" fill={z.stroke} fontSize="11" fontWeight="700" opacity="0.9" fontFamily="-apple-system,system-ui">Zone {z.id}</text>
+          <text x={(z.x+z.w/2)*CELL} y={z.y*CELL+26} textAnchor="middle" fill={z.stroke} fontSize="9" fontWeight="400" opacity="0.6" fontFamily="-apple-system,system-ui">{z.name}</text>
+        </g>
+      ))}
+
+      {/* Special zones */}
+      {SPECIAL_ZONES.map(z => (
+        <g key={z.id}>
+          <rect x={z.x*CELL} y={z.y*CELL} width={z.w*CELL} height={z.h*CELL} fill={z.id==='OUT'?'url(#outStripe)':'url(#recvStripe)'} stroke={z.stroke} strokeWidth="1.5" strokeOpacity="0.6" rx="4"/>
+          <rect x={z.x*CELL} y={z.y*CELL} width={z.w*CELL} height={z.h*CELL} fill={z.fill} stroke="none" rx="4" opacity="0.6"/>
+          <text x={(z.x+z.w/2)*CELL} y={(z.y+z.h/2)*CELL-4} textAnchor="middle" fill={z.stroke} fontSize="12" fontWeight="700" opacity="0.9" fontFamily="-apple-system,system-ui">{z.name.toUpperCase()}</text>
+          <text x={(z.x+z.w/2)*CELL} y={(z.y+z.h/2)*CELL+11} textAnchor="middle" fill={z.stroke} fontSize="9" opacity="0.55" fontFamily="-apple-system,system-ui">
+            {z.id==='OUT'?'▼ DELIVERY POINT':'▲ INBOUND GOODS'}
+          </text>
+        </g>
+      ))}
+
+      {/* Charging stations */}
+      {CS_STATIONS.map(cs => (
+        <g key={cs.id}>
+          <rect x={cs.x*CELL+2} y={cs.y*CELL+2} width={CELL-4} height={CELL-4} fill="rgba(255,214,10,0.06)" stroke="#ffd60a" strokeWidth="1" strokeOpacity="0.4" rx="6"/>
+          <text x={cx(cs.x)} y={cy(cs.y)+4} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="#ffd60a" opacity="0.7">⚡</text>
+        </g>
+      ))}
+
+      {/* Ghost trails */}
+      {completedPaths.map(p => (
+        <g key={p.id} style={{animation:'ghostFade 9s linear forwards',pointerEvents:'none'}}>
+          <line x1={cx(p.fromX)} y1={cy(p.fromY)} x2={cx(p.toX)} y2={cy(p.toY)}
+            stroke={p.isRobot?'#0a84ff':'#ff9f0a'} strokeWidth="1.5" strokeDasharray="5,4" opacity="0.4"/>
+        </g>
+      ))}
+
+      {/* Delivery diamonds */}
+      {assigned.map(t => {
+        const hasDiff = Math.abs(t.toX-t.fromX)+Math.abs(t.toY-t.fromY) > 0.5;
+        if (!hasDiff) return null;
+        return <polygon key={`del-${t.id}`}
+          points={`${cx(t.toX)},${cy(t.toY)-7} ${cx(t.toX)+5},${cy(t.toY)} ${cx(t.toX)},${cy(t.toY)+7} ${cx(t.toX)-5},${cy(t.toY)}`}
+          fill="#0a84ff" fillOpacity="0.18" stroke="#0a84ff" strokeWidth="1" opacity="0.7"/>;
+      })}
+
+      {/* Agent movement paths */}
+      {allAgents.map(a => {
+        if (a.phase==='idle' || a.pickupX===null) return null;
+        const isRobot = 'battery' in a, isCharging = !a.currentTaskId;
+        const c1 = isRobot ? (isCharging?'#ffd60a':'#0a84ff') : '#ff9f0a';
+        return (
+          <g key={`p-${a.id}`}>
+            {(a.phase==='moving_to_pickup'||a.phase==='at_pickup') && (
+              <line x1={cx(a.x)} y1={cy(a.y)} x2={cx(a.pickupX)} y2={cy(a.pickupY)} stroke={c1} strokeWidth="1.5" strokeDasharray="4,3" opacity="0.6"/>
+            )}
+            {!isCharging && a.deliveryX!==null && (a.phase==='moving_to_delivery'||a.phase==='at_pickup') && (
+              <line x1={cx(a.pickupX)} y1={cy(a.pickupY)} x2={cx(a.deliveryX)} y2={cy(a.deliveryY)} stroke="#30d158" strokeWidth="1.5" strokeDasharray="4,4" opacity="0.45"/>
+            )}
+            {!isCharging && a.pickupX!==null && (
+              <polygon points={`${cx(a.pickupX)},${cy(a.pickupY)-6} ${cx(a.pickupX)+4},${cy(a.pickupY)} ${cx(a.pickupX)},${cy(a.pickupY)+6} ${cx(a.pickupX)-4},${cy(a.pickupY)}`}
+                fill="none" stroke={c1} strokeWidth="1.2" opacity="0.65"/>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Pending task markers */}
+      {pending.map(t => (
+        <g key={t.id} className="task-marker" style={{transformOrigin:`${cx(t.fromX)}px ${cy(t.fromY)}px`}}>
+          <circle cx={cx(t.fromX)} cy={cy(t.fromY)} r="8" fill={PRI_COLOR[t.priority]} opacity="0.18"/>
+          <circle cx={cx(t.fromX)} cy={cy(t.fromY)} r="4" fill={PRI_COLOR[t.priority]} opacity="0.65"/>
+          <text x={cx(t.fromX)} y={cy(t.fromY)-12} textAnchor="middle" fontSize="7" fill={PRI_COLOR[t.priority]} fontWeight="700" fontFamily="'SF Mono',Menlo,monospace">{t.id}</text>
+        </g>
+      ))}
+
+      {/* Assigned task markers */}
+      {assigned.map(t => (
+        <g key={t.id}>
+          <circle cx={cx(t.fromX)} cy={cy(t.fromY)} r="8" fill={PRI_COLOR[t.priority]} opacity="0.28"/>
+          <circle cx={cx(t.fromX)} cy={cy(t.fromY)} r="4" fill={PRI_COLOR[t.priority]} opacity="0.9"/>
+          <text x={cx(t.fromX)} y={cy(t.fromY)-12} textAnchor="middle" fontSize="7" fill="#fff" fontWeight="700" fontFamily="'SF Mono',Menlo,monospace">{t.id}</text>
+        </g>
+      ))}
+
+      {/* Robots */}
+      {robots.map(r => (
+        <g key={r.id}>
+          <circle cx={cx(r.x)} cy={cy(r.y)} r="13"
+            fill={r.phase!=='idle'?'rgba(10,132,255,0.12)':r.status==='charging'?'rgba(255,214,10,0.08)':'rgba(10,132,255,0.06)'}
+            stroke={r.battery<20?'#ff453a':'#0a84ff'} strokeWidth={r.battery<20?2:1.5} strokeOpacity={r.battery<20?0.9:0.7}/>
+          <rect x={cx(r.x)-4} y={cy(r.y)-3.5} width={8} height={6} rx="1.5" fill="none" stroke={r.battery<20?'#ff453a':'#0a84ff'} strokeWidth="1" strokeOpacity="0.7"/>
+          <line x1={cx(r.x)-2.5} y1={cy(r.y)+2.5} x2={cx(r.x)-2.5} y2={cy(r.y)+6} stroke={r.battery<20?'#ff453a':'#0a84ff'} strokeWidth="1" strokeOpacity="0.7"/>
+          <line x1={cx(r.x)+2.5} y1={cy(r.y)+2.5} x2={cx(r.x)+2.5} y2={cy(r.y)+6} stroke={r.battery<20?'#ff453a':'#0a84ff'} strokeWidth="1" strokeOpacity="0.7"/>
+          <text x={cx(r.x)} y={cy(r.y)-17} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={r.battery<20?'#ff453a':'rgba(10,132,255,0.9)'} fontFamily="'SF Mono',Menlo,monospace">{r.name}</text>
+        </g>
+      ))}
+
+      {/* Humans */}
+      {humans.map(h => (
+        <g key={h.id}>
+          <circle cx={cx(h.x)} cy={cy(h.y)} r="13"
+            fill={h.phase!=='idle'?'rgba(255,159,10,0.12)':'rgba(255,159,10,0.06)'}
+            stroke="#ff9f0a" strokeWidth="1.5" strokeOpacity="0.7"/>
+          <circle cx={cx(h.x)} cy={cy(h.y)-4} r="3.5" fill="none" stroke="#ff9f0a" strokeWidth="1.1" strokeOpacity="0.7"/>
+          <path d={`M ${cx(h.x)-4.5} ${cy(h.y)+7} Q ${cx(h.x)} ${cy(h.y)+3} ${cx(h.x)+4.5} ${cy(h.y)+7}`} fill="none" stroke="#ff9f0a" strokeWidth="1.1" strokeOpacity="0.7"/>
+          <text x={cx(h.x)} y={cy(h.y)-17} textAnchor="middle" fontSize="7.5" fontWeight="700" fill="rgba(255,159,10,0.9)" fontFamily="'SF Mono',Menlo,monospace">{h.name}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ═══ SECTION ═══ */
+function Section({ title, badge, defaultOpen=true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="panel-section">
+      <div className="sec-hdr" onClick={()=>setOpen(o=>!o)}>
+        <div className="sec-hdr-left">
+          <span className="sec-hdr-label">{title}</span>
+          {badge!==undefined && <span className="count-pill">{badge}</span>}
+        </div>
+        <span className={`sec-chevron ${open?'open':''}`}>▲</span>
+      </div>
+      {open && children}
+    </div>
+  );
+}
+
+/* ═══ TASK QUEUE ═══ */
+function TaskQueue({ tasks }) {
+  const visible = [...tasks].filter(t=>t.status!=='completed').sort((a,b)=>PRI_ORDER[a.priority]-PRI_ORDER[b.priority]);
+  return (
+    <Section title="Task Queue" badge={visible.length}>
+      <div className="task-scroll">
+        {visible.length===0 && <div className="empty-msg">No pending tasks</div>}
+        {visible.map(t => (
+          <div key={t.id} className={`task-card ${t.status}`}>
+            <div className="task-row1">
+              <span className="task-id">{t.id}</span>
+              <span className="pri-badge" style={{color:PRI_COLOR[t.priority],background:PRI_BG[t.priority]}}>{t.priority}</span>
+              <span className={`status-chip ${t.status}`}>{t.status}</span>
+            </div>
+            <div className="task-row2">
+              <span className="task-type-lbl">{t.type}</span>
+              <span className="task-zone-lbl">{t.zoneName}</span>
+              <span style={{fontSize:10,color:t.requiredAgent==='robot'?'#0a84ff':t.requiredAgent==='human'?'#ff9f0a':'rgba(255,255,255,0.35)',fontWeight:600,background:t.requiredAgent==='robot'?'rgba(10,132,255,0.1)':t.requiredAgent==='human'?'rgba(255,159,10,0.1)':'rgba(255,255,255,0.05)',padding:'1px 5px',borderRadius:4}}>
+                {t.requiredAgent==='robot'?'BOT':t.requiredAgent==='human'?'HUM':'ANY'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/* ═══ AGENT STATUS ═══ */
+function AgentStatus({ robots, humans }) {
+  const render = (a, isRobot) => {
+    const [pCls, pText] = phaseLabel(a.phase);
+    return (
+      <div key={a.id} className={`agent-row ${a.status}`}>
+        <div className={`agent-avatar ${isRobot?'avatar-robot':'avatar-human'}`}>{a.id}</div>
+        <div className="agent-body">
+          <div className="agent-name">{a.name}</div>
+          {isRobot && <div className="batt-track"><div className="batt-fill" style={{width:`${a.battery}%`,background:a.battery<20?'#ff453a':a.battery<50?'#ff9f0a':'#30d158'}}/></div>}
+          <div className="agent-sub">
+            {isRobot && <span style={{color:a.battery<20?'#ff453a':a.battery<50?'#ff9f0a':'rgba(255,255,255,0.35)'}}>{a.battery}%</span>}
+            {isRobot && a.battery<20 && <span className="batt-warn">LOW</span>}
+            {isRobot && a.battery>=20 && a.battery<50 && <span className="batt-warn" style={{background:'rgba(255,159,10,0.15)',color:'#ff9f0a'}}>MED</span>}
+            <span>✓ {a.completedCount}</span>
+            <span>{a.totalDistTraveled.toFixed(1)}c</span>
+          </div>
+        </div>
+        <div className="agent-right">
+          <span className={`status-led led-${a.status}`}/>
+          <span className={`phase-badge phase-${pCls}`}>{pText}</span>
+          {a.currentTaskId && <span className="agent-task-lbl">{a.currentTaskId}</span>}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <Section title="Agents" badge={robots.length+humans.length}>
+      <div className="agent-scroll">
+        {robots.map(r=>render(r,true))}
+        {humans.map(h=>render(h,false))}
+      </div>
+    </Section>
+  );
+}
+
+/* ═══ LAST RUN SUMMARY ═══ */
+function LastRunSummary({ lastRun }) {
+  const [col, setCol] = useState(false);
+  if (!lastRun) return null;
+  return (
+    <div style={{padding:'0 12px 6px',flexShrink:0}}>
+      <div className="last-run-panel">
+        <div className="last-run-header" onClick={()=>setCol(c=>!c)}>
+          <span className="last-run-title">Run #{lastRun.runId} — {lastRun.timestamp}</span>
+          <span className="last-run-badge">{lastRun.assignments.length} assigned · {lastRun.slaBreachesThisRun} SLA breach{lastRun.slaBreachesThisRun!==1?'es':''}</span>
+          <span className="last-run-chevron">{col?'▶':'▼'}</span>
+        </div>
+        {!col && (
+          <div className="last-run-body">
+            {lastRun.assignments.map((a,i) => (
+              <div key={i} className="lrun-row">
+                <span className="lrun-agent">{a.agentId}</span>
+                <span className="lrun-arrow">→</span>
+                <span className="lrun-task">{a.taskId}</span>
+                <span className="lrun-type">{a.taskType}</span>
+                <span className="lrun-route">({a.fromCoords.x},{a.fromCoords.y})→({a.toCoords.x},{a.toCoords.y})</span>
+                <span className="lrun-dist">{a.totalDist.toFixed(1)}c</span>
+                <span className="pri-badge" style={{color:PRI_COLOR[a.priority],background:PRI_BG[a.priority]}}>{a.priority[0].toUpperCase()}</span>
+              </div>
+            ))}
+            {lastRun.chargeActions.map((a,i) => (
+              <div key={`c${i}`} className="lrun-row">
+                <span className="lrun-agent">{a.agentId}</span><span className="lrun-arrow">→</span>
+                <span style={{color:'#ffd60a',fontWeight:700,fontSize:11}}>⚡ CHARGE</span>
+                <span className="lrun-type">{a.battery}% batt</span>
+              </div>
+            ))}
+            <div className="lrun-totals">
+              {lastRun.totalDistanceThisRun.toFixed(1)} cells total · avg cycle {lastRun.avgCycleTimeThisRun>0?lastRun.avgCycleTimeThisRun.toFixed(1)+'s':'—'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ METRICS PANEL ═══ */
+function MetricsPanel({ m }) {
+  const good = '#30d158', warn = '#ff9f0a', bad = '#ff453a', neutral = '#fff';
+  const cards = [
+    { lbl:'Completed',    val:m.totalCompleted,              suf:'',    color: m.totalCompleted>0?good:neutral,                               tip:'Total tasks completed this session' },
+    { lbl:'Throughput',   val:m.throughput.toFixed(1),       suf:'/hr', color: m.throughput>10?good:m.throughput>0?warn:neutral,             tip:'Tasks completed per hour' },
+    { lbl:'Avg Wait',     val:m.avgWaitSeconds.toFixed(1),   suf:'s',   color: m.avgWaitSeconds>30?bad:m.avgWaitSeconds>15?warn:neutral,     tip:'Average time tasks wait before being assigned' },
+    { lbl:'Avg Cycle',    val:m.avgCycleTime.toFixed(1),     suf:'s',   color: neutral,                                                        tip:'Average time from task assignment to completion' },
+    { lbl:'Utilization',  val:m.utilizationRate,             suf:'%',   color: m.utilizationRate>70?good:m.utilizationRate>40?warn:neutral,   tip:'Percentage of agents that were working in last run' },
+    { lbl:'Idle Rate',    val:m.idleRate,                    suf:'%',   color: m.idleRate>60?bad:m.idleRate>40?warn:neutral,                 tip:'Percentage of agent ticks spent idle — lower is better' },
+    { lbl:'SLA Breach',   val:m.slaBreachRate,               suf:'%',   color: m.slaBreachRate>0?bad:good, warn:m.slaBreachRate>0,           tip:'Urgent tasks that waited more than 30s before assignment' },
+    { lbl:'On-Time',      val:m.onTimeRate,                  suf:'%',   color: m.onTimeRate>=100?good:m.onTimeRate>=80?warn:bad,             tip:'Percentage of urgent tasks assigned within the 30s SLA' },
+    { lbl:'Queue',        val:`${m.queueDepth}${m.queueTrend}`, suf:'', color: m.queueDepth>6?bad:m.queueDepth>3?warn:neutral,              tip:'Current pending tasks — arrow shows trend vs last run' },
+    { lbl:'Peak Load',    val:m.peakLoad,                    suf:' ag', color: neutral,                                                        tip:'Max agents working simultaneously in any single run' },
+    { lbl:'Urgent Miss',  val:m.urgentMissed,                suf:'',    color: m.urgentMissed>0?bad:good, warn:m.urgentMissed>0,             tip:'Urgent tasks that could not be assigned due to no idle agents' },
+    { lbl:'Congestion',   val:m.congestionZone,              suf:'',    sm:true, color: neutral,                                               tip:'Zone with the most pending tasks (hotspot)' },
+    { lbl:'Human Split',  val:m.humanSplit,                  suf:'%',   color: neutral,                                                        tip:'Percentage of completed tasks handled by human workers' },
+    { lbl:'Total Dist',   val:m.totalDistance.toFixed(1),    suf:'c',   color: neutral,                                                        tip:'Total grid cells traveled by all agents this session' },
+    { lbl:'Batt Charged', val:m.robotsCharging,              suf:'',    color: neutral,                                                        tip:'Total charge actions ordered across all runs' },
+    { lbl:'Batt Eff',     val:m.battEfficiency,              suf:'%/c', color: neutral,                                                        tip:'Battery drain per cell traveled — lower means more efficient routing' },
+  ];
+  return (
+    <Section title="PM Dashboard" defaultOpen={true}>
+      <div className="metrics-wrap">
+        <div className="metrics-grid-4">
+          {cards.map((c,i) => (
+            <div key={i} className={`metric-card ${c.warn?'alert':''}`} title={c.tip}>
+              <div className="metric-lbl">{c.lbl}</div>
+              <div className={`metric-val ${c.sm?'sm':''}`} style={{color:c.color}}>{c.val}{c.suf}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ═══ LOG PANEL ═══ */
+function LogPanel({ orchLog, movementLog }) {
+  const [tab, setTab] = useState('ai');
+  const log = tab==='ai' ? orchLog : movementLog;
+  return (
+    <div className="panel-section grow">
+      <div className="log-tabs">
+        <button className={`log-tab ${tab==='ai'?'active':''}`} onClick={()=>setTab('ai')}>
+          AI Decisions <span className="count-pill">{orchLog.length}</span>
+        </button>
+        <button className={`log-tab ${tab==='move'?'active':''}`} onClick={()=>setTab('move')}>
+          Movement <span className="count-pill">{movementLog.length}</span>
+        </button>
+      </div>
+      <div className="log-scroll">
+        {log.length===0 && <div className="empty-msg">{tab==='ai'?'Run the orchestrator to see decisions':'Movement events appear during animation'}</div>}
+        {log.map((e,i) => (
+          <div key={i} className="log-entry">
+            <span className="log-ts">{e.ts}</span>
+            <span className={tab==='move'?'log-move':'log-msg'}>{e.msg}</span>
+            {e.reason && <span className="log-reason">— {e.reason}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ INFO MODAL ═══ */
+function InfoModal({ onClose }) {
+  return (
+    <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="info-modal-box">
+        <div className="modal-hdr">
+          <span className="modal-title">How Assignment Works</span>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+
+        <div className="info-section">
+          <div className="info-section-title">Agent Types</div>
+          <div className="info-row">
+            <span className="info-badge" style={{background:'rgba(10,132,255,0.12)',color:'#0a84ff'}}>BOT</span>
+            <span className="info-text"><strong>Robots</strong> handle Pick, Move Pallet, and Pack Order tasks. They have a battery that drains with distance and must charge at <strong>⚡ stations</strong> when below 15%.</span>
+          </div>
+          <div className="info-row">
+            <span className="info-badge" style={{background:'rgba(255,159,10,0.12)',color:'#ff9f0a'}}>HUM</span>
+            <span className="info-text"><strong>Human workers</strong> handle Quality Check tasks exclusively. They don't have a battery.</span>
+          </div>
+          <div className="info-row">
+            <span className="info-badge" style={{background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.5)'}}>ANY</span>
+            <span className="info-text"><strong>Restock</strong> tasks can be handled by either robots or humans — the AI picks whoever is closest and idle.</span>
+          </div>
+        </div>
+
+        <div className="info-section">
+          <div className="info-section-title">Assignment Rules</div>
+          <ul className="info-rule-list">
+            <li><strong>Priority order:</strong> Urgent → High → Medium → Low. Higher-priority tasks are assigned first.</li>
+            <li><strong>Closest idle agent wins.</strong> The AI calculates grid distance and picks the nearest eligible agent.</li>
+            <li><strong>One task per agent</strong> at a time — busy agents are skipped until they finish.</li>
+            <li><strong>Low battery override:</strong> robots under 15% are sent to charge before any task assignment.</li>
+          </ul>
+        </div>
+
+        <div className="info-section" style={{paddingBottom:20}}>
+          <div className="info-section-title">Reading the Grid</div>
+          <ul className="info-rule-list">
+            <li>Pulsing <strong style={{color:'#0a84ff'}}>●</strong> dot = pending task waiting for assignment.</li>
+            <li>Solid <strong style={{color:'#30d158'}}>●</strong> dot = task assigned, agent en route.</li>
+            <li>Dashed line from agent = path to pickup → then to delivery.</li>
+            <li>Fading trail = recently completed route.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ HISTORY MODAL ═══ */
+function HistoryModal({ sessionLog, onClose }) {
+  const [open, setOpen] = useState(new Set(sessionLog.length?[sessionLog[sessionLog.length-1].runId]:[]));
+  const toggle = id => setOpen(prev=>{const s=new Set(prev);s.has(id)?s.delete(id):s.add(id);return s;});
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(sessionLog,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='warehouse-session.json'; a.click();
+  };
+  const exportCSV = () => {
+    const rows=['runId,timestamp,taskId,agentId,taskType,zone,priority,waitSeconds,fromX,fromY,toX,toY,totalDist,cycleTime,reason,action'];
+    sessionLog.forEach(r=>{
+      r.assignments.forEach(a=>rows.push(`${r.runId},${r.timestamp},${a.taskId},${a.agentId},${a.taskType},"${a.zone}",${a.priority},${(a.waitSeconds||0).toFixed(1)},${a.fromCoords.x},${a.fromCoords.y},${a.toCoords.x},${a.toCoords.y},${a.totalDist.toFixed(2)},${a.cycleTimeSeconds!==null?a.cycleTimeSeconds.toFixed(1):''},"${(a.reason||'').replace(/"/g,'""')}",assign`));
+      r.chargeActions.forEach(a=>rows.push(`${r.runId},${r.timestamp},,${a.agentId},,,,,,,,,,"${(a.reason||'').replace(/"/g,'""')}",charge`));
+    });
+    const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='warehouse-session.csv'; a.click();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-box">
+        <div className="modal-hdr">
+          <span className="modal-title">Session History</span>
+          <div className="modal-btns">
+            <button className="btn btn-secondary btn-sm" onClick={exportJSON} disabled={!sessionLog.length}>Export JSON</button>
+            <button className="btn btn-secondary btn-sm" onClick={exportCSV} disabled={!sessionLog.length}>Export CSV</button>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+          </div>
+        </div>
+        <div className="modal-body">
+          {!sessionLog.length && <div className="empty-msg">No orchestration runs yet.</div>}
+          {[...sessionLog].reverse().map(run=>(
+            <div key={run.runId} className="run-block">
+              <div className="run-hdr" onClick={()=>toggle(run.runId)}>
+                <span className="run-chevron">{open.has(run.runId)?'▼':'▶'}</span>
+                <span className="run-num">Run #{run.runId}</span>
+                <span className="run-time">{run.timestamp}</span>
+                <span className="run-sum">{run.assignments.length} assigned · {run.chargeActions.length} charged · {run.slaBreachesThisRun} SLA breaches</span>
+              </div>
+              {open.has(run.runId) && (
+                <div className="run-body">
+                  {run.assignments.map((a,i)=>(
+                    <div key={i} className="assign-card">
+                      <div className="assign-top">
+                        <span className="asgn-task">{a.taskId}</span>
+                        <span className="asgn-arrow">→</span>
+                        <span className="asgn-agent">{a.agentId}</span>
+                        <span className="asgn-type">{a.taskType}</span>
+                        <span className="pri-badge" style={{color:PRI_COLOR[a.priority],background:PRI_BG[a.priority]}}>{a.priority}</span>
+                        <span className="asgn-route">({a.fromCoords.x},{a.fromCoords.y})→({a.toCoords.x},{a.toCoords.y})</span>
+                        <span className="asgn-dist">{a.totalDist.toFixed(1)}c</span>
+                        <span className="asgn-zone">wait {(a.waitSeconds||0).toFixed(1)}s</span>
+                      </div>
+                      {a.reason&&<div className="asgn-reason">{a.reason}</div>}
+                    </div>
+                  ))}
+                  {run.chargeActions.map((a,i)=>(
+                    <div key={`c${i}`} className="assign-card is-charge">
+                      <div className="assign-top">
+                        <span className="asgn-agent">{a.agentId}</span><span className="asgn-arrow">→</span>
+                        <span className="asgn-charge-lbl">⚡ Charge</span>
+                        {a.battery!==undefined&&<span className="asgn-zone">{a.battery}% battery</span>}
+                      </div>
+                      {a.reason&&<div className="asgn-reason">{a.reason}</div>}
+                    </div>
+                  ))}
+                  {run.metricsSnapshot&&(
+                    <div className="run-snap">
+                      <span>Utilization {run.metricsSnapshot.utilizationRate}%</span>
+                      <span>Avg wait {run.metricsSnapshot.avgWaitSeconds.toFixed(1)}s</span>
+                      <span>Distance {run.totalDistanceThisRun.toFixed(1)}c</span>
+                      <span>Cycle {run.avgCycleTimeThisRun>0?run.avgCycleTimeThisRun.toFixed(1)+'s':'—'}</span>
+                      <span>SLA breaches {run.slaBreachesThisRun}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ APP ═══ */
+function App() {
+  const [robots,         setRobots]         = useState(INIT_ROBOTS);
+  const [humans,         setHumans]         = useState(INIT_HUMANS);
+  const [tasks,          setTasks]          = useState(INIT_TASKS);
+  const [sessionLog,     setSessionLog]     = useState([]);
+  const [orchLog,        setOrchLog]        = useState([]);
+  const [movementLog,    setMovementLog]    = useState([]);
+  const [completedPaths, setCompletedPaths] = useState([]);
+  const [lastRun,        setLastRun]        = useState(null);
+  const [metrics,        setMetrics]        = useState({
+    totalCompleted:0, avgWaitSeconds:0, utilizationRate:0, robotsCharging:0,
+    mostLoadedAgent:'—', bottleneckTaskType:'—', urgentMissed:0, avgBatteryDrain:0,
+    throughput:0, avgCycleTime:0, slaBreachRate:0, onTimeRate:100,
+    congestionZone:'—', humanSplit:0, totalDistance:0, idleRate:0,
+    queueDepth:0, queueTrend:'→', peakLoad:0, battEfficiency:'0',
+  });
+  const [isRunning,    setIsRunning]    = useState(false);
+  const [showHistory,  setShowHistory]  = useState(false);
+  const [showInfo,     setShowInfo]     = useState(false);
+  const [apiError,     setApiError]     = useState(null);
+
+  const rRobots         = useRef(robots);
+  const rHumans         = useRef(humans);
+  const rTasks          = useRef(tasks);
+  const rSession        = useRef(sessionLog);
+  const rCurrentRunSnap = useRef(null);
+  const rCycleTimes     = useRef([]);
+  const rCompletedIds   = useRef(new Set());
+  const rPrevQueueDepth = useRef(0);
+  const sessionStartMs  = useRef(Date.now());
+  const animIntervalRef = useRef(null);
+  const idleConsecRef   = useRef(0);
+
+  useEffect(()=>{rRobots.current=robots;},[robots]);
+  useEffect(()=>{rHumans.current=humans;},[humans]);
+  useEffect(()=>{rTasks.current=tasks;},[tasks]);
+  useEffect(()=>{rSession.current=sessionLog;},[sessionLog]);
+
+  const pushOrchLog = entries => setOrchLog(prev=>[...entries,...prev].slice(0,40));
+
+  const stopAnimationLoop = () => {
+    if (animIntervalRef.current) { clearInterval(animIntervalRef.current); animIntervalRef.current=null; }
+    const runSnap = rCurrentRunSnap.current;
+    if (!runSnap) return;
+    const stR=rRobots.current, stH=rHumans.current, stT=rTasks.current;
+    const remaining  = stT.filter(t=>t.status!=='completed');
+    const finalTasks = [...remaining, ...Array.from({length:ri(2,3)},()=>randomTask())];
+    const done       = stT.filter(t=>t.status==='completed'&&t.cycleEndAt&&t.cycleStartAt);
+    runSnap.avgCycleTimeThisRun = done.length>0 ? done.reduce((s,t)=>s+(t.cycleEndAt-t.cycleStartAt)/1000,0)/done.length : 0;
+    const newSession = [...rSession.current, runSnap];
+    rPrevQueueDepth.current = metrics.queueDepth;
+    const mets = computeMetrics(stR,stH,newSession,finalTasks,sessionStartMs.current,rCycleTimes.current,rPrevQueueDepth.current);
+    runSnap.metricsSnapshot = {utilizationRate:mets.utilizationRate,avgWaitSeconds:mets.avgWaitSeconds};
+    setTasks(finalTasks); setSessionLog(newSession); setMetrics(mets);
+    setLastRun(runSnap); setIsRunning(false);
+    rTasks.current=finalTasks; rSession.current=newSession;
+  };
+
+  const startAnimationLoop = () => {
+    idleConsecRef.current = 0;
+    animIntervalRef.current = setInterval(()=>{
+      const curR=rRobots.current, curH=rHumans.current, curT=rTasks.current;
+      const allIdle = [...curR,...curH].every(a=>a.phase==='idle');
+      if (allIdle) {
+        if (++idleConsecRef.current >= 2) { clearInterval(animIntervalRef.current); animIntervalRef.current=null; stopAnimationLoop(); return; }
+      } else { idleConsecRef.current=0; }
+      const {newRobots,newHumans,newTasks,logEvents,completedPathsToAdd} = stepAgents(curR,curH,curT);
+      setRobots(newRobots); setHumans(newHumans); setTasks(newTasks);
+      rRobots.current=newRobots; rHumans.current=newHumans; rTasks.current=newTasks;
+      if (logEvents.length>0) setMovementLog(prev=>[...logEvents,...prev].slice(0,60));
+      const now=Date.now();
+      newTasks.filter(t=>t.status==='completed'&&t.cycleEndAt&&t.cycleStartAt&&!rCompletedIds.current.has(t.id))
+        .forEach(t=>{ rCompletedIds.current.add(t.id); rCycleTimes.current.push((t.cycleEndAt-t.cycleStartAt)/1000); });
+      if (completedPathsToAdd.length>0)
+        setCompletedPaths(prev=>[...prev.filter(p=>p.expiresAt>now),...completedPathsToAdd]);
+    }, ANIM_INTERVAL);
+  };
+
+  const runOrchestrator = async () => {
+    if (isRunning) return;
+    setIsRunning(true); setApiError(null);
+    const curRobots=rRobots.current, curHumans=rHumans.current, curTasks=rTasks.current;
+    const pending=curTasks.filter(t=>t.status==='pending');
+    const urgentMissed=Math.max(0,pending.filter(t=>t.priority==='urgent').length-(curRobots.filter(r=>r.status==='idle').length+curHumans.filter(h=>h.status==='idle').length));
+
+    const userMsg = JSON.stringify({
+      robots:  curRobots.map(r=>({id:r.id,name:r.name,position:{x:Math.round(r.x),y:Math.round(r.y)},battery:r.battery,status:r.status})),
+      humans:  curHumans.map(h=>({id:h.id,name:h.name,position:{x:Math.round(h.x),y:Math.round(h.y)},status:h.status})),
+      pendingTasks: pending.map(t=>({id:t.id,type:t.type,pickup:{x:t.fromX,y:t.fromY},delivery:{x:t.toX,y:t.toY},zone:t.zoneName,priority:t.priority,requiredAgent:t.requiredAgent})),
+    });
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'x-api-key':API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1024,system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]}),
+      });
+      if (!resp.ok) { let msg=`API error ${resp.status}`; try{const e=await resp.json();msg=e.error?.message||msg;}catch{}throw new Error(msg); }
+      const data=await resp.json();
+      let raw=data.content[0].text.trim(), assignments;
+      try{assignments=JSON.parse(raw);}catch{const m=raw.match(/\[[\s\S]*\]/);if(m)assignments=JSON.parse(m[0]);else throw new Error('Cannot parse AI response');}
+
+      const now=Date.now(), assignedIds=new Set(), logEntries=[], enrichedAsgn=[], enrichedCharge=[];
+
+      const newRobots = curRobots.map(r => {
+        const ca=assignments.find(a=>a.agentId===r.id&&a.action==='charge');
+        if (ca) {
+          const cs=nearestCS(r);
+          enrichedCharge.push({agentId:r.id,battery:r.battery,reason:ca.reason||''});
+          logEntries.push({ts:new Date().toLocaleTimeString(),msg:`${r.id} → ⚡ charge`,reason:ca.reason||'Low battery'});
+          return {...r,status:'charging',phase:'moving_to_pickup',pickupX:cs.x,pickupY:cs.y,deliveryX:cs.x,deliveryY:cs.y,currentTaskId:null,atPickupTarget:AT_CHARGE_TICKS,atPickupTick:0,taskDistAccum:0};
+        }
+        const aa=assignments.find(a=>a.agentId===r.id&&a.taskId);
+        if (aa) {
+          const t=curTasks.find(t=>t.id===aa.taskId);
+          if (t) {
+            assignedIds.add(aa.taskId);
+            const pd=dist(r.x,r.y,t.fromX,t.fromY), dd=dist(t.fromX,t.fromY,t.toX,t.toY);
+            const pt=t.type==='Quality Check'?AT_QC_TICKS:AT_PICKUP_TICKS;
+            enrichedAsgn.push({taskId:t.id,agentId:r.id,taskType:t.type,zone:t.zoneName,priority:t.priority,reason:aa.reason||'',waitSeconds:(now-t.createdAt)/1000,fromCoords:{x:t.fromX,y:t.fromY},toCoords:{x:t.toX,y:t.toY},pickupDist:pd,deliveryDist:dd,totalDist:pd+dd,cycleTimeSeconds:null});
+            logEntries.push({ts:new Date().toLocaleTimeString(),msg:`${t.id} → ${r.id}`,reason:aa.reason||''});
+            return {...r,status:'working',phase:'moving_to_pickup',currentTaskId:t.id,pickupX:t.fromX,pickupY:t.fromY,deliveryX:t.toX,deliveryY:t.toY,atPickupTarget:pt,atPickupTick:0,taskDistAccum:0};
+          }
+        }
+        return r;
+      });
+
+      const newHumans = curHumans.map(h => {
+        const aa=assignments.find(a=>a.agentId===h.id&&a.taskId);
+        if (aa&&!assignedIds.has(aa.taskId)) {
+          const t=curTasks.find(t=>t.id===aa.taskId);
+          if (t) {
+            assignedIds.add(aa.taskId);
+            const pd=dist(h.x,h.y,t.fromX,t.fromY), dd=dist(t.fromX,t.fromY,t.toX,t.toY);
+            const pt=t.type==='Quality Check'?AT_QC_TICKS:AT_PICKUP_TICKS;
+            enrichedAsgn.push({taskId:t.id,agentId:h.id,taskType:t.type,zone:t.zoneName,priority:t.priority,reason:aa.reason||'',waitSeconds:(now-t.createdAt)/1000,fromCoords:{x:t.fromX,y:t.fromY},toCoords:{x:t.toX,y:t.toY},pickupDist:pd,deliveryDist:dd,totalDist:pd+dd,cycleTimeSeconds:null});
+            logEntries.push({ts:new Date().toLocaleTimeString(),msg:`${t.id} → ${h.id}`,reason:aa.reason||''});
+            return {...h,status:'working',phase:'moving_to_pickup',currentTaskId:t.id,pickupX:t.fromX,pickupY:t.fromY,deliveryX:t.toX,deliveryY:t.toY,atPickupTarget:pt,atPickupTick:0,taskDistAccum:0};
+          }
+        }
+        return h;
+      });
+
+      const newTasks=curTasks.map(t=>assignedIds.has(t.id)?{...t,status:'assigned',assignedAt:now,cycleStartAt:now}:t);
+      setRobots(newRobots); setHumans(newHumans); setTasks(newTasks);
+      pushOrchLog([...logEntries].reverse());
+      rRobots.current=newRobots; rHumans.current=newHumans; rTasks.current=newTasks;
+
+      const runSnap={
+        runId:rSession.current.length+1, timestamp:new Date().toLocaleTimeString(),
+        assignments:enrichedAsgn, chargeActions:enrichedCharge,
+        agentsWorking:assignedIds.size, urgentMissed, metricsSnapshot:null,
+        totalDistanceThisRun:enrichedAsgn.reduce((s,a)=>s+a.totalDist,0),
+        avgCycleTimeThisRun:0,
+        slaBreachesThisRun:enrichedAsgn.filter(a=>a.priority==='urgent'&&a.waitSeconds>SLA_URGENT_SEC).length,
+      };
+      rCurrentRunSnap.current=runSnap;
+      startAnimationLoop();
+
+    } catch(err) { setApiError(err.message); setIsRunning(false); }
+  };
+
+  const handleAddTask = () => setTasks(prev=>[...prev,randomTask()]);
+
+  const handleAddUrgentTask = () => {
+    const z = ZONES[ri(0, ZONES.length-1)];
+    setTasks(prev=>[...prev, makeTask('Pick', z.x+ri(0,z.w-1), z.y+ri(0,z.h-1), OUTPUT_BAY.x, OUTPUT_BAY.y, z.id, 'urgent')]);
+  };
+
+useEffect(() => {
+    const onKey = e => {
+      if ((e.code === 'Space' || e.code === 'Enter') && e.target === document.body && !isRunning) {
+        e.preventDefault();
+        runOrchestrator();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isRunning]);
+
+  const handleReset = () => {
+    if (animIntervalRef.current) { clearInterval(animIntervalRef.current); animIntervalRef.current=null; }
+    _tc=0; rCycleTimes.current=[]; rCompletedIds.current=new Set();
+    rPrevQueueDepth.current=0; sessionStartMs.current=Date.now(); rCurrentRunSnap.current=null;
+    setRobots(INIT_ROBOTS()); setHumans(INIT_HUMANS()); setTasks(INIT_TASKS());
+    setSessionLog([]); setOrchLog([]); setMovementLog([]);
+    setCompletedPaths([]); setLastRun(null);
+    setMetrics({totalCompleted:0,avgWaitSeconds:0,utilizationRate:0,robotsCharging:0,mostLoadedAgent:'—',bottleneckTaskType:'—',urgentMissed:0,avgBatteryDrain:0,throughput:0,avgCycleTime:0,slaBreachRate:0,onTimeRate:100,congestionZone:'—',humanSplit:0,totalDistance:0,idleRate:0,queueDepth:0,queueTrend:'→',peakLoad:0,battEfficiency:'0'});
+    setApiError(null); setIsRunning(false);
+  };
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="app-dot"/>
+        <span className="app-wordmark">Warehouse OS</span>
+        <button className="btn-info" onClick={()=>setShowInfo(true)} title="How assignment works">i</button>
+        <div className="header-stats">
+          <div className="header-stat">
+            <span className="header-stat-val" style={{color: tasks.filter(t=>t.status==='pending').length > 0 ? '#0a84ff' : 'rgba(255,255,255,0.4)'}}>{tasks.filter(t=>t.status==='pending').length}</span>
+            <span className="header-stat-lbl">Queue</span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-val" style={{color: [...robots,...humans].filter(a=>a.status==='working').length > 0 ? '#30d158' : 'rgba(255,255,255,0.4)'}}>{[...robots,...humans].filter(a=>a.status==='working').length}</span>
+            <span className="header-stat-lbl">Active</span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-val" style={{color: robots.filter(r=>r.battery<20).length > 0 ? '#ff453a' : 'rgba(255,255,255,0.4)'}}>{robots.filter(r=>r.battery<20).length}</span>
+            <span className="header-stat-lbl">Low Batt</span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-val">{metrics.totalCompleted}</span>
+            <span className="header-stat-lbl">Done</span>
+          </div>
+        </div>
+        <div className="header-spacer"/>
+        <div className="header-divider"/>
+        <div className="header-actions">
+          <button className="btn btn-run" onClick={runOrchestrator} disabled={isRunning} title="Run orchestrator (Space)">
+            {isRunning ? <><span className="spin-ring"/> Orchestrating</> : '▶  Run'}
+          </button>
+<button className="btn btn-secondary btn-sm" onClick={handleAddTask} disabled={isRunning}>+ Task</button>
+          <button className="btn btn-urgent btn-sm" onClick={handleAddUrgentTask} disabled={isRunning} title="Add urgent Pick task">+ Urgent</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setShowHistory(true)}>History</button>
+          <button className="btn btn-danger btn-sm" onClick={handleReset}>Reset</button>
+        </div>
+      </header>
+
+      {apiError && <div className="error-banner">{apiError}</div>}
+
+      <div className="main-layout">
+        <section className="left-panel">
+          <div className="grid-wrapper">
+            <WarehouseGrid robots={robots} humans={humans} tasks={tasks} completedPaths={completedPaths}/>
+          </div>
+          <div className="zone-legend">
+            {ZONES.map(z=>(
+              <div key={z.id} className="legend-item">
+                <span className="legend-dot" style={{background:z.stroke}}/>
+                <span>{z.id} · {z.name}</span>
+              </div>
+            ))}
+            <div className="legend-item"><span className="legend-dot" style={{background:'#0a84ff'}}/><span>Output Bay</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'#bf5af2'}}/><span>Receiving Dock</span></div>
+            <div className="legend-item"><span className="legend-dot" style={{background:'#ffd60a'}}/><span>Charging</span></div>
+          </div>
+        </section>
+
+        <aside className="right-panel">
+          <TaskQueue tasks={tasks}/>
+          <AgentStatus robots={robots} humans={humans}/>
+          <LastRunSummary lastRun={lastRun}/>
+          <MetricsPanel m={metrics}/>
+          <LogPanel orchLog={orchLog} movementLog={movementLog}/>
+        </aside>
+      </div>
+
+      {showHistory && <HistoryModal sessionLog={sessionLog} onClose={()=>setShowHistory(false)}/>}
+      {showInfo    && <InfoModal onClose={()=>setShowInfo(false)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
