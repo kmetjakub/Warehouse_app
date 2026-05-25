@@ -732,7 +732,6 @@ const AT_CHARGE_TICKS = 22;
 const AT_QC_TICKS     = 10;
 const SLA_URGENT_SEC  = 30;
 
-const API_KEY = ''; // paste your Anthropic API key here
 
 const SYSTEM_PROMPT = `You are an AI warehouse orchestrator. WAREHOUSE LAYOUT (20×15 grid):
 - Receiving Dock (RECV): cols 7-12, rows 0-1 — inbound goods
@@ -1487,9 +1486,9 @@ function App() {
     });
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      const resp = await fetch('/api/claude',{
         method:'POST',
-        headers:{'x-api-key':API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+        headers:{'content-type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1024,system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]}),
       });
       if (!resp.ok) { let msg=`API error ${resp.status}`; try{const e=await resp.json();msg=e.error?.message||msg;}catch{}throw new Error(msg); }
