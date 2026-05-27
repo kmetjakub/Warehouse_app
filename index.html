@@ -812,7 +812,7 @@ const phaseLabel = p => {
 
 function makeTask(type, fromX, fromY, toX, toY, zoneId, pri) {
   const z = [...ZONES, ...SPECIAL_ZONES].find(z => z.id === zoneId);
-  const req = type === 'Quality Check' ? 'human' : type === 'Restock' ? 'any' : 'robot';
+  const req = type === 'Quality Check' ? 'human' : 'robot';
   return {
     id: nid(), type, fromX, fromY, toX, toY,
     x: fromX, y: fromY,
@@ -1323,8 +1323,8 @@ function InfoModal({ onClose }) {
             <span className="info-text"><strong>Human workers</strong> handle Quality Check tasks exclusively. They don't have a battery.</span>
           </div>
           <div className="info-row">
-            <span className="info-badge" style={{background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.5)'}}>ANY</span>
-            <span className="info-text"><strong>Restock</strong> tasks can be handled by either robots or humans — the AI picks whoever is closest and idle.</span>
+            <span className="info-badge" style={{background:'rgba(10,132,255,0.12)',color:'#0a84ff'}}>BOT</span>
+            <span className="info-text"><strong>Restock</strong> tasks are handled by robots only.</span>
           </div>
         </div>
 
