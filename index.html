@@ -824,7 +824,7 @@ function makeTask(type, fromX, fromY, toX, toY, zoneId, pri) {
 }
 
 function randomTask() {
-  const type = TASK_TYPES[ri(0, TASK_TYPES.length - 1)];
+  const type = Math.random() < 0.25 ? 'Quality Check' : TASK_TYPES.filter(t => t !== 'Quality Check')[ri(0, TASK_TYPES.length - 2)];
   if (type === 'Pack Order') return makeTask(type, OUTPUT_BAY.x, OUTPUT_BAY.y, OUTPUT_BAY.x, OUTPUT_BAY.y, 'OUT', 'medium');
   if (type === 'Restock') {
     const z = ZONES[ri(0, ZONES.length - 1)];
