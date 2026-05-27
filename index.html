@@ -789,7 +789,7 @@ const SYSTEM_PROMPT = `You are an AI warehouse orchestrator. WAREHOUSE LAYOUT (2
 - Output Bay (OUT): cols 5-14, rows 9-13 — all delivered items go here
 - Charging Stations: (0,14) and (19,14)
 TASK ROUTING: Pick → storage zone to Output Bay. Restock → Receiving Dock to storage zone. Move Pallet → zone to zone. Quality Check → in-place (human). Pack Order → in-place at Output Bay (robot).
-RULES: Robots handle Pick, Move Pallet, Pack Order. Humans handle Quality Check. Any agent handles Restock. Priority: urgent>high>medium>low. Prefer closest idle agent. Robots <15% battery → charge. Never assign more than one task per agent.
+RULES: Robots handle Pick, Move Pallet, Pack Order, Restock. Humans handle Quality Check ONLY — never assign any other task type to a human. Priority: urgent>high>medium>low. Prefer closest idle agent. Robots <15% battery → charge. Never assign more than one task per agent.
 Respond ONLY with valid JSON array:
 [{"taskId":"T1","agentId":"R2","reason":"..."},{"agentId":"R4","action":"charge","reason":"..."}]`;
 
